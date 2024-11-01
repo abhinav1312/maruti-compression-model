@@ -1,15 +1,36 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, HTMLResponse
 import tempfile
+import logging
 import os
-
-# Import the VideoClassifier class from the detection model file
 from detection_model import VideoClassifier
+
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # Forces TensorFlow to use the CPU
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 
 app = FastAPI()
 
+# Allow CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Change this to specific origins in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+# Import the VideoClassifier class from the detection model file
+
+
 # Initialize your model (adjust as needed)
-video_classifier = VideoClassifier('detection_model.h5')
+model_path = 'detection_model.h5'
+if not os.path.exists(model_path):
+    raise FileNotFoundError(f"Model file not found: {model_path}")
+
+video_classifier = VideoClassifier(model_path)
 
 @app.get("/", response_class=HTMLResponse)
 async def root():
